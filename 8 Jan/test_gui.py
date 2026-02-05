@@ -99,7 +99,7 @@ class Backend:
             if not self.sim and run_cycle:
                 left, right = run_cycle()
             else:
-                time.sleep(0.5)
+                time.sleep(2)
                 path = self.cfg["camera"]["save_path"]
                 os.makedirs(path, exist_ok=True)
                 left = os.path.join(path, f"{board}_left.jpg")
@@ -108,7 +108,7 @@ class Backend:
                 open(right, "a").close()
         except Exception as e:
             print("[ERROR] Robot cycle failed:", e)
-        time.sleep(0.5)
+        time.sleep(2)
         return (False, left, right)
     
     #   ------- Robot Cycle (Single-Side) ----------                                                Backend_Function_9
@@ -119,14 +119,14 @@ class Backend:
                 left = run_cycle_one_side()
             else:
                 # --- Simulation fallback ---
-                time.sleep(0.5)
+                time.sleep(2)
                 path = self.cfg["camera"]["save_path"]
                 os.makedirs(path, exist_ok=True)
                 left = os.path.join(path, f"{board}_left.jpg")
                 open(left, "a").close()
         except Exception as e:
             print("[ERROR] Single-side robot cycle failed:", e)
-        time.sleep(0.5)
+        time.sleep(2)
         return left
 
 
@@ -400,32 +400,28 @@ class SerialLinkerApp(tk.Tk):
         # --- Linking step ---
         link_success = False
         link_msg = msg
-        
-        # Check if barcode decoding failed (represented as "-1" string)
-        if left_code == "-1" or right_code == "-1":
-            link_success = False
-            link_msg = "Decoding failed. Try Again."
-        elif left_code and self.operator_id:
+        if left_code and self.operator_id:
             try:
                 if double_side_flag and right_code:
                     link_success, link_msg = self.link_serials(self.operator_id, left_code, right_code)
                 else:
                     link_success, link_msg = self.depanel_only(self.operator_id, left_code)
             except Exception as e:
-                link_success = False
                 link_msg = f"Linking exception: {e}"
                 print("[ERROR]", link_msg)
-        else:
-            link_success = False
-            if not left_code:
-                link_msg = "No barcode detected"
-            elif not self.operator_id:
-                link_msg = "Operator ID missing"
+
         # --- CSV Logging + Failed Image Backup ---
-        #try:
-            #self.log_to_csv(operator=self.operator_name, board=self.board.get(), left_sn=left_code, right_sn=right_code, result=link_success, msg=link_msg, left_img=left_path,  right_img=right_path)
-        #except Exception as e:
-            #print("[ERROR] Logging failed:", e)
+        try:
+            self.log_to_csv(operator=self.operator_name,
+                            board=self.board.get(),
+                            left_sn=left_code,
+                            right_sn=right_code,
+                            result=link_success,
+                            msg=link_msg,
+                            left_img=left_path,
+                            right_img=right_path)
+        except Exception as e:
+            print("[ERROR] Logging failed:", e)
 
         # --- GUI Feedback ---
         if link_success:

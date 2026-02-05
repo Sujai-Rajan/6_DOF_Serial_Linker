@@ -1,0 +1,125 @@
+{
+    "CaptureVisionTemplates": [
+        {
+            "Name": "ReadDPM",
+            "ImageROIProcessingNameArray": [
+                "roi_read_dpm"
+            ],
+            "MaxParallelTasks": 0,
+            "Timeout": 3000
+        }
+    ],
+    "ImageParameterOptions": [
+        {
+            "Name": "ip_default"
+        }
+    ],
+    "TargetROIDefOptions": [
+        {
+            "Name": "roi_read_dpm",
+            "TaskSettingNameArray": [
+                "task_read_dpm"
+            ]
+        }
+    ],
+    "BarcodeReaderTaskSettingOptions": [
+        {
+            "Name": "task_read_dpm",
+            "ExpectedBarcodesCount": 1,
+            "BarcodeFormatIds": [
+                "BF_DATAMATRIX"
+            ],
+            "MinResultConfidence": 30,
+            "DPMCodeReadingModes": [
+                {
+                    "Mode": "DPMCRM_GENERAL",
+                    "TextureDetectionSensitivity": 9
+                }
+            ],
+            "DeblurModes": [
+                {
+                    "Mode": "DM_SKIP"
+                },
+                {
+                    "Mode": "DM_DIRECT_BINARIZATION"
+                },
+                {
+                    "Mode": "DM_THRESHOLD_BINARIZATION"
+                }
+            ],
+            "MirrorMode": "MM_BOTH",
+            "SectionArray": [
+                {
+                    "Section": "ST_REGION_PREDETECTION",
+                    "ImageParameterName": "ip_default",
+                    "StageArray": [
+                        {
+                            "Stage": "SST_PREDETECT_REGIONS",
+                            "RegionPredetectionModes": [
+                                {
+                                    "Mode": "RPM_AUTO"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "Section": "ST_BARCODE_LOCALIZATION",
+                    "ImageParameterName": "ip_default",
+                    "StageArray": [
+                        {
+                            "Stage": "SST_LOCALIZE_CANDIDATE_BARCODES",
+                            "LocalizationModes": [
+                                {
+                                    "Mode": "LM_SCAN_DIRECTLY"
+                                },
+                                {
+                                    "Mode": "LM_STATISTICS_MARKS"
+                                },
+                                {
+                                    "Mode": "LM_CONNECTED_BLOCKS"
+                                },
+                                {
+                                    "Mode": "LM_LINES"
+                                }
+                            ]
+                        },
+                        {
+                            "Stage": "SST_LOCALIZE_BARCODES"
+                        }
+                    ]
+                },
+                {
+                    "Section": "ST_BARCODE_DECODING",
+                    "ImageParameterName": "ip_default",
+                    "StageArray": [
+                        {
+                            "Stage": "SST_RESIST_DEFORMATION"
+                        },
+                        {
+                            "Stage": "SST_COMPLEMENT_BARCODE"
+                        },
+                        {
+                            "Stage": "SST_SCALE_BARCODE_IMAGE"
+                        },
+                        {
+                            "Stage": "SST_DECODE_BARCODES"
+                        }
+                    ]
+                }
+            ],
+            "BarcodeComplementModes": [
+                {
+                    "Mode": "BCM_AUTO"
+                },
+                {
+                    "Mode": "BCM_PREPEND"
+                },
+                {
+                    "Mode": "BCM_APPEND"
+                }
+            ],
+            "ResultVerificationLength": 4
+        }
+    ]
+}

@@ -1,0 +1,219 @@
+{
+
+    "boards":
+    [
+        "GENERIC MODE - Run if Board type is missing",
+        "pcb_194",
+        "pcb_227-2",
+        "pcb_273",
+        "pcb_274 Rev-B",
+        "pcb_283",
+        "pcb_285",
+        "pcb_289-02",
+        "pcb_382-2",
+        "pcb_436-2",
+        "pcb_437",
+        "pcb_438",
+        "pcb_439",
+        "pcb_466",
+        "pcb 468",
+        "pcb_485 Rev-A",
+        "pcb_491",
+        "pcb_600015-1-REV F",
+        "pcb_600095",
+        "pcb_600096",
+        "pcb_600637"
+    ],
+
+    "default_board": "GENERIC MODE",
+
+    "simulate_linking": false,
+    "robot_module": "serial_linker_robot",
+    "logging": false,
+    "MAX_POLL_ATTEMPTS": 30,
+    "POLL_INTERVAL_SEC": 2,
+
+
+
+
+
+    "robot_main":
+    {
+        "home_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "before_home" : [0.0, 40.0, 0.0,-30.0, 0.0, 0.0],
+        "speed": 100,
+        "port": "/dev/ttyAMA0",
+        "baudrate": 115200
+
+    },
+
+    "camera":
+    {
+        "camera_index": 0,
+        "camera_format": "MJPG",
+        "debug_cam" : false,
+        "use_gst"   : false,
+        "resolution": [4000, 3000],
+        "fps": 15,
+        "save_path": "/mt/barcode_dropbox/linker_line_1/image",
+        "controls": 
+        {
+            "brightness": {"value": 25, "min": 0, "max": 64},
+            "contrast": {"value": 45, "min": 0, "max": 64},
+            "saturation": {"value": 0, "min": 0, "max": 64},
+            "hue": {"value": 35, "min": 0, "max": 64},
+            "gamma": {"value": 32, "min": 0, "max": 64},
+            "sharpness": {"value":42, "min": 0, "max": 64}
+        }
+    },
+
+
+    "sensors_and_inputs":
+    {
+        "momentary_button_pin": 1,
+        "toggle_switch_pin": 2,
+        "horse_shoe_sensor_pin": 2,
+        "light_curtain_sensor_pin": 3
+    },
+
+    "outputs":
+    {
+       "led_strip_control_pin": 1,
+       "tower_light_buzzer_pin": 6,
+       "tower_light_red_pin": 3,
+       "tower_light_yellow_pin": 4,
+       "tower_light_green_pin": 2
+    },
+                    
+
+    "GENERIC MODE":
+    {
+        "double_side_flag": true,
+        "left_pose": [103.0, 62.0, 18.0, -76.0, 78.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_273":
+    {
+        "double_side_flag": true,
+        "left_pose": [103.0, 62.0, 18.0, -76.0, 78.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_274 Rev-B":
+    {
+        "double_side_flag": true,
+        "left_pose": [100.0, 40.0, 41.0, -79.0, 79.0, 2.0],
+        "right_pose": [-143.0, 84.0, -37.0, -41.0, 145.0, 4.0]
+    },
+    "pcb_283":
+    {
+        "double_side_flag": true,
+        "left_pose": [98.0, 40.0, 45.0, -80.0, 81.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_285":
+    {
+        "double_side_flag": true,
+        "left_pose": [102.0, 88.0, -44.0, -42.0, 83.0, 2.0],
+        "right_pose": [-141.0, 78.0, -39.0, -34.0, 144.0, 4.0]
+    },
+    "pcb_600096":
+    {
+        "double_side_flag": true,
+        "left_pose": [100.0, 67.0, -10.0, -60.0, 79.0, 2.0],
+        "right_pose": [-143.0, 78.0, -32.0, -45.0, 145.0, 3.0]
+    },
+    "pcb_436-2":
+    {
+        "double_side_flag": true,
+        "left_pose": [114.0, 77.0, -9.0, -63.0, 60.0, 0.0],
+        "right_pose": [-150.0, 100.0, -60.0, -30.0, 144.0, 8.0]
+    },
+    "pcb_437":
+    {
+        "double_side_flag": false,
+        "left_pose": [112.0, 73.0, 0.0, -70.0, 70.0, 0.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "pcb_485 Rev-A":
+    {
+        "double_side_flag": true,
+        "left_pose": [100.0, 88.0,-48.0, -36.0, 85.0, 1.0],
+        "right_pose": [-150.0, 73.0, -30.0, -36.0, 152.0, 6.0]
+    },
+    "pcb_194":
+    {
+        "double_side_flag": true,
+        "left_pose": [116.0, 101.0,-18.0, -72.5, 67.0, -2.0],
+        "right_pose": [-155.0, 92.0, -17.0, -72.5, 156.0, 2.0]
+    },
+    "pcb_382-2":
+    {
+        "double_side_flag": false,
+        "left_pose": [118.0, 80.0, -14.0, -58.0, 69.0, -2.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "pcb_491":    
+    {
+        "double_side_flag": true,
+        "left_pose": [103.0, 62.0, 18.0, -76.0, 78.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_600096":
+    {
+        "double_side_flag": true,
+        "left_pose": [103.0, 62.0, 18.0, -76.0, 78.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_289-02":
+    {
+        "double_side_flag": true,
+        "left_pose": [120.0, 100.0, -25.0, -70.0, 60.0, 0.0],
+        "right_pose": [-155.0, 87.0, -32.0, -51.0, 154.0, 4.0]
+    },
+    "pcb_600637":
+    {
+        "double_side_flag": false,
+        "left_pose": [100.0, 90.0, -50.0, -40.0, 82.0, 2.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "pcb_227-2":
+    {
+        "double_side_flag": false,
+        "left_pose": [90.0, 105.0, -80.0, -16.0, 89.0, 1.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "pcb 468":
+    {
+        "double_side_flag": false,
+        "left_pose": [110.0, 68.0, -10.0, -52.0, 68.0, -1.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "pcb_439":
+    {
+        "double_side_flag": true,
+        "left_pose": [110.0, 90.0, -45.0, -40.0, 70.0, -2.0],
+        "right_pose": [-150.0, 60.0, 0.0, -50.0, 161.0, 9.0]
+    },
+    "pcb_438":
+    {
+        "double_side_flag": true,
+        "left_pose": [104.0, 90.0, -56.0, -28.0, 75.0, 0.0],
+        "right_pose": [-150.0, 75.0, -25.0, -43.0, 149.0, 7.0]
+    },
+    "pcb_600015-1-REV F":
+    {
+        "double_side_flag": true,
+        "left_pose": [110.0, 82.0, -30.0, -51.0, 73.0, 1.0],
+        "right_pose": [-143.0, 90.0, -47.5, -39.0, 145.0, 4.0]
+    },
+    "pcb_466":
+    {
+        "double_side_flag": false,
+        "left_pose": [-152.0, 90.0, -31.0, -60.0, 141.0, 1.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    }
+
+
+
+}
+

@@ -1,0 +1,88 @@
+{
+
+    "boards":
+    [
+        "pcb_273",
+        "pcb_283",
+        "pcb_600096"
+    ],
+
+    "default_board": "pcb_273",
+
+    "simulate_linking": false,
+    "robot_module": "serial_linker_robot",
+    "logging": false,
+    "MAX_POLL_ATTEMPTS": 30,
+    "POLL_INTERVAL_SEC": 2,
+
+
+
+
+
+    "robot_main":
+    {
+        "home_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "before_home" : [0.0, 40.0, 0.0,-30.0, 0.0, 0.0],
+        "speed": 100,
+        "port": "/dev/ttyAMA0",
+        "baudrate": 115200
+
+    },
+
+    "camera":
+    {
+        "camera_index": 0,
+        "camera_format": "MJPG",
+        "debug_cam" : false,
+        "use_gst"   : false,
+        "resolution": [4000, 3000],
+        "fps": 15,
+        "save_path": "/mt/barcode_dropbox/linker_line_1/image",
+        "controls": 
+        {
+            "brightness": {"value": 25, "min": 0, "max": 64},
+            "contrast": {"value": 45, "min": 0, "max": 64},
+            "saturation": {"value": 0, "min": 0, "max": 64},
+            "hue": {"value": 35, "min": 0, "max": 64},
+            "gamma": {"value": 32, "min": 0, "max": 64},
+            "sharpness": {"value":42, "min": 0, "max": 64}
+        }
+    },
+
+    "sensors_and_inputs":
+    {
+        "momentary_button_pin": 3,
+        "toggle_switch_pin": 1,
+        "horse_shoe_sensor_pin": 2,
+        "light_curtain_sensor_pin": 6
+    },
+
+    "outputs":
+    {
+       "led_strip_control_pin": 1,
+       "tower_light_buzzer_pin": 2,
+       "tower_light_red_pin": 4,
+       "tower_light_yellow_pin": 1,
+       "tower_light_green_pin": 3
+    },
+                    
+
+    "pcb_273":
+    {
+        "left_pose": [103.0, 62.0, 18.0, -76.0, 78.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_283":
+    {
+        "left_pose": [98.0, 40.0, 45.0, -80.0, 81.0, 2.0],
+        "right_pose": [-143.0, 82.0, -28.0, -50.0, 143.0, 4.0]
+    },
+    "pcb_600096":
+    {
+        "left_pose": [100.0, 67.0, -10.0, -60.0, 79.0, 2.0],
+        "right_pose": [-143.0, 78.0, -32.0, -45.0, 145.0, 3.0]
+    }
+
+
+}
+

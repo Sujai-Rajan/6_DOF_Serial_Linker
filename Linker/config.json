@@ -1,0 +1,59 @@
+{
+    "robot_main":
+    {
+        "home_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "speed": 100,
+        "port": "/dev/ttyAMA0",
+        "baudrate": 115200
+
+    },
+
+    "camera":
+    {
+        "camera_index": 0,
+        "camera_format": "MJPG",
+        "debug_cam" : 1,
+        "use_gst"   : 0,
+        "resolution": [4000, 3000],
+        "fps": 15,
+        "save_path": "/home/er/Documents/captures"
+    },
+
+    "sensors_and_inputs":
+    {
+        "momentary_button_pin": 3,
+        "toggle_switch_pin": 1 ,
+        "horse_shoe_sensor_pin": 2,
+        "light_curtain_sensor_pin": 6
+    },
+
+    "outputs":
+    {
+       "led_strip_control_pin": 1,
+       "tower_light_control_pin": 2
+    },
+                    
+
+
+
+
+
+
+    "pcb_273":
+    {
+        "left_pose": [105.0, 65.0, 25.0, -81.0, 74.0, 0.0],
+        "left_home": [0.0, 65.0, 25.0, -81.0, 74.0, 0.0],
+        "right_pose": [-140.0, 60.0, 30.0, -78.0, 144.0, 0.0],
+        "right_home": [0.0, 60.0, 30.0, -78.0, 144.0, 0.0]
+    },
+    "pcb_274":
+    {
+        "left_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "left_home": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "right_pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        "right_home": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    }
+
+
+}
+

@@ -1,0 +1,7 @@
+*.rtf linguist-vendored
+*.rtf linguist-documentation
+
+*.html linguist-vendored
+*.html linguist-documentation
+*.md linguist-vendored
+*.md linguist-documentation

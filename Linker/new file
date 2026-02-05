@@ -1,0 +1,58 @@
+# ---------- Depanel Only Serial ----------                                                               SerialLinkerApp_Function_14B
+    def depanel_only(self, op_id, serial_code):
+        DEPANEL_API_URL = "https://web.futaba.com/api/v1/sernums/depanel"
+        payload = {
+            "op_id": op_id,
+            "sernum": serial_code
+        }
+
+        try:
+            # print(f"[API_INFO] Depanel request → {payload}")
+            r = requests.post(DEPANEL_API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+
+            # --- Handle HTTP errors cleanly ---
+            if r.status_code >= 400:
+                try:
+                    err = r.json().get("error", r.text)
+                except Exception:
+                    err = r.text
+                print(f"[API_INFO] HTTP {r.status_code}: {err}")
+                return False, f"HTTP {r.status_code}: {err}"
+
+            # --- Parse response JSON ---
+            try:
+                resp = r.json()
+            except Exception:
+                print("[API_INFO] Response not JSON:", r.text)
+                return False, "Invalid response from server"
+
+            print("[API_INFO] Depanel API response:", resp)
+
+            # --- Interpret common response formats ---
+            # Case 1: newer API with "depanelled" and "info"
+            if "depanelled" in resp:
+                ok = bool(resp["depanelled"])
+                msg = resp.get("info", "No info returned")
+                return ok, msg
+
+            # Case 2: legacy API with "success"
+            if "success" in resp:
+                ok = bool(resp["success"])
+                msg = resp.get("info") or resp.get("message") or ("Depanel successful" if ok else "Depanel failed")
+                return ok, msg
+
+            # Case 3: explicit error message
+            if "error" in resp:
+                return False, str(resp["error"])
+
+            # Fallback: any other 200 OK response
+            return True, resp.get("info", "Depanel successful-default")
+
+        except requests.exceptions.Timeout:
+            print("[API_INFO] Depanel request timed out.")
+            return False, "Request timed out"
+
+        except Exception as e:
+            print("[API_INFO] Depanel request failed:", e)
+            return False, str(e)
+

@@ -342,7 +342,7 @@ def run_cycle(on_left_image=None, on_right_image=None):
                         
                     # Move to left and capture image    
                     go_left()
-                    time.sleep(1)
+                    time.sleep(1.5)
 
                     left_image_path = capture_image("left")
                     if on_left_image:

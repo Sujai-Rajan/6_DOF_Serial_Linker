@@ -4,12 +4,15 @@
 # Works with serial_linker_robot.py and config.json
 
 import os , json, time, threading, requests, subprocess, csv, shutil, sys
+import concurrent.futures
 from urllib import response
 from datetime import datetime
 from tkinter import ttk, messagebox
 import barcode_testing as decode
 import tkinter as tk
 from dynamsoft_server_code import process_barcode
+
+TIMING_LOGS = True
 
 
 
@@ -93,11 +96,15 @@ class Backend:
 
 
     #   ------- Robot Cycle ----------                                                                  Backend_Function_8
-    def do_robot_cycle(self, board):
+    def do_robot_cycle(self, board, on_left_image=None, on_right_image=None):
         left, right = None, None
         try:
             if not self.sim and run_cycle:
-                left, right = run_cycle()
+                try:
+                    left, right = run_cycle(on_left_image=on_left_image, on_right_image=on_right_image)
+                except TypeError:
+                    # Backward compatibility if run_cycle doesn't accept callbacks
+                    left, right = run_cycle()
             else:
                 time.sleep(0.5)
                 path = self.cfg["camera"]["save_path"]
@@ -106,17 +113,31 @@ class Backend:
                 right = os.path.join(path, f"{board}_right.jpg")
                 open(left, "a").close()
                 open(right, "a").close()
+                if on_left_image:
+                    try:
+                        on_left_image(left)
+                    except Exception as e:
+                        print("[WARN] Left image callback failed:", e)
+                if on_right_image:
+                    try:
+                        on_right_image(right)
+                    except Exception as e:
+                        print("[WARN] Right image callback failed:", e)
         except Exception as e:
             print("[ERROR] Robot cycle failed:", e)
         time.sleep(0.5)
         return (False, left, right)
     
     #   ------- Robot Cycle (Single-Side) ----------                                                Backend_Function_9
-    def do_robot_cycle_single_side(self, board):
+    def do_robot_cycle_single_side(self, board, on_left_image=None):
         left = None
         try:
             if not self.sim and run_cycle_one_side:
-                left = run_cycle_one_side()
+                try:
+                    left = run_cycle_one_side(on_left_image=on_left_image)
+                except TypeError:
+                    # Backward compatibility if run_cycle_one_side doesn't accept callbacks
+                    left = run_cycle_one_side()
             else:
                 # --- Simulation fallback ---
                 time.sleep(0.5)
@@ -124,6 +145,11 @@ class Backend:
                 os.makedirs(path, exist_ok=True)
                 left = os.path.join(path, f"{board}_left.jpg")
                 open(left, "a").close()
+                if on_left_image:
+                    try:
+                        on_left_image(left)
+                    except Exception as e:
+                        print("[WARN] Left image callback failed:", e)
         except Exception as e:
             print("[ERROR] Single-side robot cycle failed:", e)
         time.sleep(0.5)
@@ -172,6 +198,7 @@ class SerialLinkerApp(tk.Tk):
         self.pulse_job = None
         self.cycle_latched = False
         self.operator_id = ""
+        self._log_lock = threading.Lock()
 
         self._build_login()
 
@@ -324,77 +351,107 @@ class SerialLinkerApp(tk.Tk):
 
 
     def _link_thread(self):
+        t_total_start = time.perf_counter()
         # --- Get current board config ---
         board_name = self.board.get()
         board_cfg = self.cfg.get(board_name, {})
         double_side_flag = board_cfg.get("double_side_flag", True)   # ✅ default True
-
-        single_side, left_path, right_path = False, None, None
-
-        if double_side_flag:
-            single_side, left_path, right_path = self.backend.do_robot_cycle(self.board.get())
-        else:
-            left_path = self.backend.do_robot_cycle_single_side(self.board.get())
-            single_side, right_path = True, None
-
-        self.after(0, self._stop_pulse)
 
         left_code = right_code = None
         msg = "check board type"
 
         LOCAL_DECODE = False
 
-        # Using Local Decoding - Dynamsoft Trial
-        if LOCAL_DECODE:
-            if left_path:
-                try:
+        def decode_barcode(path, side):
+            t_start = time.perf_counter()
+            if not path:
+                return None, None, 0.0
+            try:
+                if LOCAL_DECODE:
                     reader = decode.get_barcode_reader()
-                    left_results = decode.decode_file(reader, left_path)
-                    left_code = left_results[0].barcode_text if left_results else None
-                    if double_side_flag:
-                        right_results = decode.decode_file(reader, right_path)
-                        right_code = right_results[0].barcode_text if right_results else None
+                    results = decode.decode_file(reader, path)
+                    t_elapsed = time.perf_counter() - t_start
+                    return (results[0].barcode_text if results else None), None, t_elapsed
+                relative_path = path.replace("/mt/barcode_dropbox/","")
+                out_file = f"/tmp/barcode_{side}.txt"
+                code = process_barcode(relative_path, out_file, "templates/ReadDPM.json")
+                t_elapsed = time.perf_counter() - t_start
+                return code, None, t_elapsed
+            except Exception as e:
+                err = f"{'Local' if LOCAL_DECODE else 'Remote'} decode failed: {e}"
+                print("[ERROR]", err)
+                t_elapsed = time.perf_counter() - t_start
+                return None, err, t_elapsed
 
-                    print(f"[INFO] Left SN: {left_code}, Right SN: {right_code}")
-                except Exception as e:
-                    print("[ERROR] Barcode decode failed:", e)
-                    left_code = right_code = None
+        single_side, left_path, right_path = False, None, None
+
+        left_err = right_err = None
+        left_decode_sec = right_decode_sec = None
+        robot_sec = 0.0
+        decode_wait_sec = 0.0
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            left_future = None
+            right_future = None
+
+            t_robot_start = time.perf_counter()
+            def on_left_image(path):
+                nonlocal left_future
+                if path and left_future is None:
+                    left_future = executor.submit(decode_barcode, path, "left")
+
+            def on_right_image(path):
+                nonlocal right_future
+                if path and right_future is None:
+                    right_future = executor.submit(decode_barcode, path, "right")
+
+            if double_side_flag:
+                single_side, left_path, right_path = self.backend.do_robot_cycle(
+                    self.board.get(), on_left_image=on_left_image, on_right_image=on_right_image
+                )
             else:
-                left_code = right_code = None
+                left_path = self.backend.do_robot_cycle_single_side(
+                    self.board.get(), on_left_image=on_left_image
+                )
+                single_side, right_path = True, None
 
+            t_robot_end = time.perf_counter()
+            self.after(0, self._stop_pulse)
 
-        # --- Decode both images using the Windows Dynamsoft server ---
-        if not LOCAL_DECODE:
-            if left_path:
-                try:
-                    print("[INFO] Submitting images to remote barcode server...")
+            if not LOCAL_DECODE and left_path:
+                print("[INFO] Submitting images to remote barcode server...")
 
-                    # Each call returns a decoded serial (or None)
-                    #print(left_path)
-                    relative_left_path = left_path.replace("/mt/barcode_dropbox/","")
-                    left_code = process_barcode(relative_left_path, "/tmp/barcode_left.txt","templates/ReadDPM.json" )
-                    if double_side_flag:
-                        relative_right_path = right_path.replace("/mt/barcode_dropbox/","")
-                        right_code = process_barcode(relative_right_path, "/tmp/barcode_right.txt","templates/ReadDPM.json")
+            if left_path and left_future is None:
+                left_future = executor.submit(decode_barcode, left_path, "left")
+            if double_side_flag and right_path and right_future is None:
+                right_future = executor.submit(decode_barcode, right_path, "right")
 
-                    if left_code and double_side_flag:
-                        msg = f"Decoded successfully: {left_code}, {right_code}"
-                    elif left_code and double_side_flag:
-                        msg = f"Decoded successfully: {left_code}"
-                    elif left_code and double_side_flag:
-                        msg = f"Only one side decoded (Left={bool(left_code)}, Right={bool(right_code)})"
-                    else:
-                        msg = "No barcode detected on either side"
+            t_decode_wait_start = time.perf_counter()
+            if left_future:
+                left_code, left_err, left_decode_sec = left_future.result()
+            if right_future:
+                right_code, right_err, right_decode_sec = right_future.result()
+            t_decode_wait_end = time.perf_counter()
+            decode_wait_sec = t_decode_wait_end - t_decode_wait_start
+            robot_sec = t_robot_end - t_robot_start
 
-                    print(f"[BARCODE_PROCESSED] Left SN: {left_code}, Right SN: {right_code}")
-
-                except Exception as e:
-                    msg = f"Remote decode failed: {e}"
-                    print("[ERROR]", msg)
-                    left_code = right_code = None
+        decode_error = left_err or right_err
+        if decode_error:
+            msg = decode_error
+            left_code = right_code = None
+        elif left_path:
+            if double_side_flag and left_code:
+                msg = f"Decoded successfully: {left_code}, {right_code}"
+            elif double_side_flag and left_code:
+                msg = f"Decoded successfully: {left_code}"
+            elif double_side_flag and left_code:
+                msg = f"Only one side decoded (Left={bool(left_code)}, Right={bool(right_code)})"
             else:
-                msg = "No image captured"
-                left_code = right_code = None
+                msg = "No barcode detected on either side"
+            print(f"[BARCODE_PROCESSED] Left SN: {left_code}, Right SN: {right_code}")
+        else:
+            msg = "No image captured"
+            left_code = right_code = None
 
 
         # --- Linking step ---
@@ -407,26 +464,23 @@ class SerialLinkerApp(tk.Tk):
             link_msg = "Decoding failed. Try Again."
         elif left_code and self.operator_id:
             try:
+                t_link_start = time.perf_counter()
                 if double_side_flag and right_code:
                     link_success, link_msg = self.link_serials(self.operator_id, left_code, right_code)
                 else:
                     link_success, link_msg = self.depanel_only(self.operator_id, left_code)
+                t_link_end = time.perf_counter()
             except Exception as e:
                 link_success = False
                 link_msg = f"Linking exception: {e}"
                 print("[ERROR]", link_msg)
+                t_link_end = time.perf_counter()
         else:
             link_success = False
             if not left_code:
                 link_msg = "No barcode detected"
             elif not self.operator_id:
                 link_msg = "Operator ID missing"
-        # --- CSV Logging + Failed Image Backup ---
-        #try:
-            #self.log_to_csv(operator=self.operator_name, board=self.board.get(), left_sn=left_code, right_sn=right_code, result=link_success, msg=link_msg, left_img=left_path,  right_img=right_path)
-        #except Exception as e:
-            #print("[ERROR] Logging failed:", e)
-
         # --- GUI Feedback ---
         if link_success:
             self.after(0, lambda: self._set_status("LINKING SUCCESSFUL", self.C_PASS, subtext=link_msg))
@@ -434,6 +488,34 @@ class SerialLinkerApp(tk.Tk):
         else:
             self.after(0, lambda: self._set_status("LINKING FAILED", self.C_FAIL, subtext=link_msg))
             self.state = "FAIL"
+
+        # --- CSV Logging + Failed Image Backup ---
+        self._log_async(
+            operator=self.operator_name,
+            board=self.board.get(),
+            left_sn=left_code,
+            right_sn=right_code,
+            result=link_success,
+            msg=link_msg,
+            left_img=left_path,
+            right_img=right_path
+        )
+
+        t_total_end = time.perf_counter()
+        link_sec = (t_link_end - t_link_start) if "t_link_start" in locals() and "t_link_end" in locals() else 0.0
+        total_sec = t_total_end - t_total_start
+        left_dec_str = f"{left_decode_sec:.2f}s" if left_decode_sec is not None else "n/a"
+        right_dec_str = f"{right_decode_sec:.2f}s" if right_decode_sec is not None else "n/a"
+        if TIMING_LOGS:
+            print(
+                "[TIMING] "
+                f"robot={robot_sec:.2f}s, "
+                f"decode_wait={decode_wait_sec:.2f}s, "
+                f"left_decode={left_dec_str}, "
+                f"right_decode={right_dec_str}, "
+                f"link_api={link_sec:.2f}s, "
+                f"total={total_sec:.2f}s"
+            )
 
 
 
@@ -515,6 +597,15 @@ class SerialLinkerApp(tk.Tk):
             try: w.destroy()
             except Exception: pass
 
+    def _log_async(self, **kwargs):
+        def _worker():
+            try:
+                with self._log_lock:
+                    self.log_to_csv(**kwargs)
+            except Exception as e:
+                print("[ERROR] Logging failed:", e)
+        threading.Thread(target=_worker, daemon=True).start()
+
 
     # ---------- Verify Login ----------                                                                    SerialLinkerApp_Function_13
     def verify_login(self,username, password):
@@ -591,7 +682,7 @@ class SerialLinkerApp(tk.Tk):
                 return False, str(resp["error"])
 
             # Fallback: any other 200 OK response
-            return True, resp.get("info", "Linked successfully-default")
+            return False, resp.get("info", "Unknown response from server")
 
         except requests.exceptions.Timeout:
             print("[API_INFO] Link request timed out.")
@@ -731,7 +822,7 @@ class SerialLinkerApp(tk.Tk):
                 return False, str(resp["error"])
 
             # Fallback: any other 200 OK response
-            return True, resp.get("info", "Depanel successful-default")
+            return False, resp.get("info", "Unknown response from server")
 
         except requests.exceptions.Timeout:
             print("[API_INFO] Depanel request timed out.")

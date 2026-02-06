@@ -322,7 +322,7 @@ def run_cycle_old():
     return left_image_path or None , right_image_path or None
 
 
-def run_cycle():
+def run_cycle(on_left_image=None, on_right_image=None):
 
     if mc is None:
         raise RuntimeError("Robot not initialized. Call init_robot() before run_cycle().")
@@ -345,6 +345,14 @@ def run_cycle():
                     time.sleep(1)
 
                     left_image_path = capture_image("left")
+                    if on_left_image:
+                        try:
+                            on_left_image(left_image_path)
+                        except Exception as e:
+                            if LOGGING_TOGGLE:
+                                logger.warning("Left image callback failed: %s", e)
+                            else:
+                                print("[WARN] Left image callback failed:", e)
 
                     go_before_home()    
                     # time.sleep(0.1)
@@ -354,6 +362,14 @@ def run_cycle():
                     time.sleep(2)
 
                     right_image_path = capture_image("right")
+                    if on_right_image:
+                        try:
+                            on_right_image(right_image_path)
+                        except Exception as e:
+                            if LOGGING_TOGGLE:
+                                logger.warning("Right image callback failed: %s", e)
+                            else:
+                                print("[WARN] Right image callback failed:", e)
 
                     go_before_home()
                     # time.sleep(0.1)
@@ -370,7 +386,7 @@ def run_cycle():
 
 
 # ---------- Main Process (Single-Side) ----------
-def run_cycle_one_side():
+def run_cycle_one_side(on_left_image=None):
     """Capture only one side (left) for single-sided boards."""
     if mc is None:
         raise RuntimeError("Robot not initialized. Call init_robot() before run_cycle_one_side().")
@@ -392,6 +408,14 @@ def run_cycle_one_side():
                 go_left()
                 time.sleep(1)
                 left_image_path = capture_image("left")
+                if on_left_image:
+                    try:
+                        on_left_image(left_image_path)
+                    except Exception as e:
+                        if LOGGING_TOGGLE:
+                            logger.warning("Left image callback failed: %s", e)
+                        else:
+                            print("[WARN] Left image callback failed:", e)
 
                 # --- Return home ---
                 go_home()

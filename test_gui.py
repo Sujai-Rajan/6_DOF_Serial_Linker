@@ -389,6 +389,8 @@ class SerialLinkerApp(tk.Tk):
         left_decode_sec = right_decode_sec = None
         robot_sec = 0.0
         decode_wait_sec = 0.0
+        capture_fail_sides = []
+        capture_failure = False
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             left_future = None
@@ -435,8 +437,21 @@ class SerialLinkerApp(tk.Tk):
             decode_wait_sec = t_decode_wait_end - t_decode_wait_start
             robot_sec = t_robot_end - t_robot_start
 
+        if not left_path:
+            capture_fail_sides.append("left")
+        if double_side_flag and not right_path:
+            capture_fail_sides.append("right")
+        capture_failure = bool(capture_fail_sides)
+
         decode_error = left_err or right_err
-        if decode_error:
+        if capture_failure:
+            if "left" in capture_fail_sides and "right" in capture_fail_sides:
+                msg = "Left and right image capture failed"
+            elif "left" in capture_fail_sides:
+                msg = "Left image capture failed"
+            else:
+                msg = "Right image capture failed"
+        elif decode_error:
             msg = decode_error
             left_code = right_code = None
         elif left_path:
@@ -459,7 +474,10 @@ class SerialLinkerApp(tk.Tk):
         link_msg = msg
         
         # Check if barcode decoding failed (represented as "-1" string)
-        if left_code == "-1" or right_code == "-1":
+        if capture_failure:
+            link_success = False
+            link_msg = msg
+        elif left_code == "-1" or right_code == "-1":
             link_success = False
             link_msg = "Decoding failed. Try Again."
         elif left_code and self.operator_id:

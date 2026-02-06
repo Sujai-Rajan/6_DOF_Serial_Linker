@@ -338,7 +338,7 @@ def run_cycle(on_left_image=None, on_right_image=None):
 
                     # Home position to start
                     go_home()
-                    time.sleep(0.1)
+                    # time.sleep(0.1)
                         
                     # Move to left and capture image    
                     go_left()

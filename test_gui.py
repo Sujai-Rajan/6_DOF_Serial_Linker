@@ -355,7 +355,7 @@ class SerialLinkerApp(tk.Tk):
         # --- Get current board config ---
         board_name = self.board.get()
         board_cfg = self.cfg.get(board_name, {})
-        double_side_flag = board_cfg.get("double_side_flag", True)   # ✅ default True
+        double_side_flag = board_cfg.get("double_side_flag", True)  
 
         left_code = right_code = None
         msg = "check board type"
@@ -667,7 +667,16 @@ class SerialLinkerApp(tk.Tk):
             # --- Handle HTTP errors cleanly ---
             if r.status_code >= 400:
                 try:
-                    err = r.json().get("error", r.text)
+                    resp = r.json()
+                    err = resp.get("error", r.text)
+                    details = resp.get("details")
+                    if details:
+                        if isinstance(details, list):
+                            detail_str = "; ".join(str(d) for d in details if d is not None)
+                        else:
+                            detail_str = str(details)
+                        if detail_str:
+                            err = f"{err} | {detail_str}"
                 except Exception:
                     err = r.text
                 print(f"[API_INFO] HTTP {r.status_code}: {err}")
@@ -682,25 +691,37 @@ class SerialLinkerApp(tk.Tk):
 
             print("[API_INFO] Link API response:", resp)
 
-            # --- Interpret common response formats ---
-            # Case 1: newer API with "linked" and "info"
-            if "linked" in resp:
-                linked = bool(resp["linked"])
-                msg = resp.get("info", "No info returned")
-                return linked, msg
-
-            # Case 2: legacy API with "success"
-            if "success" in resp:
-                ok = bool(resp["success"])
-                msg = resp.get("info") or resp.get("message") or ("Success" if ok else "Failed")
-                return ok, msg
-
-            # Case 3: explicit error message
+            # --- Interpret response formats ---
+            # Error response
             if "error" in resp:
+                details = resp.get("details")
+                if details:
+                    if isinstance(details, list):
+                        detail_str = "; ".join(str(d) for d in details if d is not None)
+                    else:
+                        detail_str = str(details)
+                    if detail_str:
+                        return False, f"{resp['error']} | {detail_str}"
                 return False, str(resp["error"])
 
+            # Success/fail response
+            if "linked" in resp:
+                ok = bool(resp["linked"])
+                msg = resp.get("info") or ""
+                details = resp.get("details")
+                if details and not ok:
+                    if isinstance(details, list):
+                        detail_str = "; ".join(str(d) for d in details if d is not None)
+                    else:
+                        detail_str = str(details)
+                    if detail_str:
+                        msg = f"{msg} | {detail_str}" if msg else detail_str
+                if not msg:
+                    msg = "Success" if ok else "Failed"
+                return ok, msg
+
             # Fallback: any other 200 OK response
-            return False, resp.get("info", "Unknown response from server")
+            return False, "Unknown response from server"
 
         except requests.exceptions.Timeout:
             print("[API_INFO] Link request timed out.")
@@ -807,7 +828,16 @@ class SerialLinkerApp(tk.Tk):
             # --- Handle HTTP errors cleanly ---
             if r.status_code >= 400:
                 try:
-                    err = r.json().get("error", r.text)
+                    resp = r.json()
+                    err = resp.get("error", r.text)
+                    details = resp.get("details")
+                    if details:
+                        if isinstance(details, list):
+                            detail_str = "; ".join(str(d) for d in details if d is not None)
+                        else:
+                            detail_str = str(details)
+                        if detail_str:
+                            err = f"{err} | {detail_str}"
                 except Exception:
                     err = r.text
                 print(f"[API_INFO] HTTP {r.status_code}: {err}")
@@ -822,25 +852,37 @@ class SerialLinkerApp(tk.Tk):
 
             print("[API_INFO] Depanel API response:", resp)
 
-            # --- Interpret common response formats ---
-            # Case 1: newer API with "depanelled" and "info"
-            if "depanelled" in resp:
-                ok = bool(resp["depanelled"])
-                msg = resp.get("info", "No info returned")
-                return ok, msg
-
-            # Case 2: legacy API with "success"
-            if "success" in resp:
-                ok = bool(resp["success"])
-                msg = resp.get("info") or resp.get("message") or ("Depanel successful" if ok else "Depanel failed")
-                return ok, msg
-
-            # Case 3: explicit error message
+            # --- Interpret response formats ---
+            # Error response
             if "error" in resp:
+                details = resp.get("details")
+                if details:
+                    if isinstance(details, list):
+                        detail_str = "; ".join(str(d) for d in details if d is not None)
+                    else:
+                        detail_str = str(details)
+                    if detail_str:
+                        return False, f"{resp['error']} | {detail_str}"
                 return False, str(resp["error"])
 
+            # Success/fail response
+            if "linked" in resp:
+                ok = bool(resp["linked"])
+                msg = resp.get("info") or ""
+                details = resp.get("details")
+                if details and not ok:
+                    if isinstance(details, list):
+                        detail_str = "; ".join(str(d) for d in details if d is not None)
+                    else:
+                        detail_str = str(details)
+                    if detail_str:
+                        msg = f"{msg} | {detail_str}" if msg else detail_str
+                if not msg:
+                    msg = "Depanel successful" if ok else "Depanel failed"
+                return ok, msg
+
             # Fallback: any other 200 OK response
-            return False, resp.get("info", "Unknown response from server")
+            return False, "Unknown response from server"
 
         except requests.exceptions.Timeout:
             print("[API_INFO] Depanel request timed out.")
